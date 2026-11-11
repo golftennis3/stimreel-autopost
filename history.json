@@ -699,6 +699,44 @@
    "time": "2026-11-11T22:59:30",
    "media_id": "18088461545319179",
    "posted_at": "2026-11-11T23:00:04"
+  },
+  {
+   "gen": "peg-drop",
+   "seed": 1217619725,
+   "images": "Default",
+   "file": "20261111-230508_peg-drop_1217619725.mp4",
+   "settings": [
+    "Balls per second 11",
+    "Size 1.4",
+    "Bounciness 0.6",
+    "Rows 10",
+    "Gravity 1.05",
+    "Layout Funnel",
+    "Palette Lava",
+    "Style Glass chimes"
+   ],
+   "time": "2026-11-11T23:05:10"
+  },
+  {
+   "gen": "marble-bounce",
+   "seed": 2185082775,
+   "images": "Things",
+   "file": "20261111-230915_marble-bounce_2185082775.mp4",
+   "settings": [
+    "Count 2",
+    "Count 55",
+    "Size 1.25",
+    "Thickness 53",
+    "Rotation speed 1.05",
+    "Opening size (°) 101",
+    "Spiral twist (°) 13",
+    "Gravity 0.45",
+    "Colours One colour",
+    "Palette Gold",
+    "Style Glass chimes",
+    "Openings Scattered"
+   ],
+   "time": "2026-11-11T23:09:18"
   }
  ]
 }

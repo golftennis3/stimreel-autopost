@@ -376,6 +376,45 @@ def _new_seed(gen, hist):
             return seed
 
 
+def _click_first(page, patterns, timeout=4000):
+    """Клікнути перший підпис (label), що відповідає одному з шаблонів. Повертає текст або None."""
+    for pat in patterns:
+        loc = page.locator("label").filter(has_text=re.compile(pat))
+        if loc.count():
+            try:
+                loc.first.click(timeout=timeout)
+                return loc.first.inner_text().strip()
+            except Exception:  # noqa: BLE001
+                continue
+    return None
+
+
+def _set_export(page, g):
+    """Довжина, роздільність, частота кадрів — з запасними варіантами, якщо сайт змінився."""
+    want = str(g["length"]).strip().lower()
+    n_fps = _num(g["fps"])
+    if want in ("round", "full round", "раунд"):
+        length_pats = [r"^\s*(Full round|Повний раунд)", r"^\s*20\s*(s|с)\s*$", r"^\s*\d+\s*(s|с)\s*$"]
+    else:
+        n = _num(g["length"])
+        length_pats = [rf"^\s*{n}\s*(s|с)\s*$", r"^\s*(Full round|Повний раунд)", r"^\s*20\s*(s|с)\s*$",
+                       r"^\s*\d+\s*(s|с)\s*$"]
+    _click_first(page, length_pats)
+    _click_first(page, [rf"^\s*{re.escape(str(g['resolution']))}\s*$", r"^\s*1080p\s*$"])
+    _click_first(page, [rf"^\s*{n_fps}\s*(fps|кадр/с)\s*$", r"^\s*30\s*(fps|кадр/с)\s*$"])
+
+
+def _wait_enabled(btn, seconds):
+    for _ in range(int(seconds * 2)):
+        try:
+            if btn.is_enabled():
+                return True
+        except Exception:  # noqa: BLE001
+            pass
+        time.sleep(0.5)
+    return False
+
+
 def _render_one(page, g, out_dir, log, gens, hist):
     gen = _choose_generator(gens, hist, g)
     seed = _new_seed(gen, hist)
@@ -397,12 +436,19 @@ def _render_one(page, g, out_dir, log, gens, hist):
     img = _pick_images(page, g, avoid=prev_img, hist=hist)
     if img:
         log(f"Картинки: {img}")
-    n_sec, n_fps = _num(g["length"]), _num(g["fps"])
-    for options in ([f"{n_sec} s", f"{n_sec} с"], [g["resolution"]], [f"{n_fps} fps", f"{n_fps} кадр/с"]):
-        loc = _exact(page, options[0])
-        for alt in options[1:]:
-            loc = loc.or_(_exact(page, alt))
-        loc.first.click(timeout=10000)
+    _set_export(page, g)
+    if not _wait_enabled(render_btn, 20):
+        # перемішані налаштування дали щось, що сайт не рендерить — скидаємо й пробуємо ще раз
+        log("Кнопка рендеру неактивна — скидаю налаштування генератора.")
+        try:
+            page.get_by_role("button", name=re.compile(r"^\s*(Reset to defaults|Скинути)", re.I)).first.click(timeout=3000)
+            page.wait_for_timeout(800)
+        except Exception:  # noqa: BLE001
+            pass
+        changed = []
+        _set_export(page, g)
+        if not _wait_enabled(render_btn, 30):
+            raise RuntimeError("кнопка рендеру неактивна навіть зі стандартними налаштуваннями")
     page.evaluate("window.__srBlob = null")
     render_btn.click()
     page.wait_for_function("window.__srBlob", timeout=g["render_timeout_sec"] * 1000, polling=1000)
@@ -509,8 +555,17 @@ def generate(cfg, count, out_dir, log=print):
                 page = ctx.new_page()
                 hist = _load_hist()
                 gens = _generators(page, g, hist, log)
+                fails = 0
                 while len(made) < count:
-                    made.append(_render_one(page, g, out_dir, log, gens, hist))
+                    try:
+                        made.append(_render_one(page, g, out_dir, log, gens, hist))
+                    except Exception as e:  # noqa: BLE001  — одна гра не вдалася: беремо іншу
+                        fails += 1
+                        log(f"Не вийшло з цією грою ({str(e).splitlines()[0][:160]}) — пробую іншу.")
+                        if fails >= max(3, count * 2):
+                            raise
+                        page.close()
+                        page = ctx.new_page()
             except Exception as e:  # noqa: BLE001
                 log(f"Генерація не вдалася ({'без вікна' if headless else 'з вікном'}): {e}")
             finally:

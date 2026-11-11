@@ -31,7 +31,7 @@ RECENT_KEEP = 1000  # скільки останніх генерацій пам'
 DEFAULTS = {
     "lang": "en",               # мова сайту: "en" (англійська) або "uk"
     "generators": "auto",       # "auto" — брати всі генератори з сайту (нові додаються самі) або список
-    "length": 20,               # секунд: 10 / 20 / 30 / 60
+    "length": "auto",           # "auto" — повний раунд, де він є (інакше 20 с); або 10 / 20 / 30 / 60; або "round"
     "resolution": "1080p",      # 720p / 1080p / 4K
     "fps": 30,                  # 30 / 60
     "images": "random",         # набір картинок: "random", "default" або список, напр. ["Cats", "Animals"]
@@ -92,7 +92,7 @@ def settings(cfg):
     g["site"] = g.get("site") or ("https://stimreel.com" if g["lang"] == "en" else "https://stimreel.com/uk")
     g["L"] = L
     g["_stats"] = cfg.get("stats") or {}
-    g["length_label"] = L["sec"].format(_num(g["length"]))
+    g["length_label"] = L["sec"].format(_num(g["length"])) if str(g["length"]).isdigit() or isinstance(g["length"], int) else str(g["length"])
     g["fps_label"] = L["fps"].format(_num(g["fps"]))
     return g
 
@@ -400,7 +400,7 @@ def _set_export(page, g):
     """Довжина, роздільність, частота кадрів — з запасними варіантами, якщо сайт змінився."""
     want = str(g["length"]).strip().lower()
     n_fps = _num(g["fps"])
-    if want in ("round", "full round", "раунд"):
+    if want in ("auto", "round", "full round", "раунд"):
         length_pats = [r"^\s*(Full round|Повний раунд)", r"^\s*20\s*(s|с)\s*$", r"^\s*\d+\s*(s|с)\s*$"]
     else:
         n = _num(g["length"])

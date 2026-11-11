@@ -34,7 +34,7 @@ def main():
         "api_version": "v27.0", "graph_host": "https://graph.facebook.com",
         "upload_host": "https://rupload.facebook.com", "share_to_feed": True,
         "default_caption": "Which one wins? 👀 #satisfying #oddlysatisfying #stimreel #reels",
-        "generate": {"browser_path": shutil.which("google-chrome") or "", "length": 20,
+        "generate": {"browser_path": shutil.which("google-chrome") or "", "length": "auto",
                      "resolution": "1080p", "fps": 30, "images": "random"},
     }
 

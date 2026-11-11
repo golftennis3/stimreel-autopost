@@ -506,7 +506,9 @@ def login_with_password(page, g, email, password, log):
     except Exception:  # noqa: BLE001
         pass
     page.wait_for_timeout(1500)
-    ok = "/login" not in page.url and page.get_by_role("link", name=re.compile(r"^\s*(Sign in|Увійти)\s*$")).count() == 0
+    # успіх = сайт пустив далі зі сторінки входу і не показує помилку (кнопка «Sign in» в меню є завжди)
+    err = page.locator("text=/(invalid|incorrect|wrong|невірн|неправильн)/i").count()
+    ok = "/login" not in page.url and not err
     log("Вхід у Stimreel: " + ("успішно" if ok else "НЕ вдався (перевір пошту й пароль у секретах GitHub)"))
     return ok
 

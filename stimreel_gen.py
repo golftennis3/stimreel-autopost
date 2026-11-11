@@ -406,9 +406,10 @@ def _set_export(page, g):
         n = _num(g["length"])
         length_pats = [rf"^\s*{n}\s*(s|с)\s*$", r"^\s*(Full round|Повний раунд)", r"^\s*20\s*(s|с)\s*$",
                        r"^\s*\d+\s*(s|с)\s*$"]
-    _click_first(page, length_pats)
+    chosen = _click_first(page, length_pats)
     _click_first(page, [rf"^\s*{re.escape(str(g['resolution']))}\s*$", r"^\s*1080p\s*$"])
     _click_first(page, [rf"^\s*{n_fps}\s*(fps|кадр/с)\s*$", r"^\s*30\s*(fps|кадр/с)\s*$"])
+    return chosen
 
 
 def _wait_enabled(btn, seconds):
@@ -453,7 +454,9 @@ def _render_one(page, g, out_dir, log, gens, hist):
     img = _pick_images(page, g, avoid=prev_img, hist=hist)
     if img:
         log(f"Картинки: {img}")
-    _set_export(page, g)
+    length = _set_export(page, g)
+    if length:
+        log(f"Довжина: {' '.join(length.split())}")
     if not _wait_enabled(render_btn, 20):
         # перемішані налаштування дали щось, що сайт не рендерить — скидаємо й пробуємо ще раз
         log("Кнопка рендеру неактивна — скидаю налаштування генератора.")

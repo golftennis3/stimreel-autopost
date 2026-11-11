@@ -641,6 +641,21 @@
     "Style Chiptune"
    ],
    "time": "2026-11-11T22:52:25"
+  },
+  {
+   "gen": "merge-drop",
+   "seed": 3967127009,
+   "images": null,
+   "file": "20261111-225518_merge-drop_3967127009.mp4",
+   "settings": [
+    "Drop speed 1.7",
+    "Bounciness 0.4",
+    "Size 0.95",
+    "Gravity 1.65",
+    "Colours One colour",
+    "Palette Neon"
+   ],
+   "time": "2026-11-11T22:55:20"
   }
  ]
 }

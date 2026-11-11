@@ -162,8 +162,8 @@ def _logged_in(page):
 def _pick_images(page, g, avoid=None, hist=None):
     """Обрати набір картинок (кнопки-радіо «За замовчуванням», «Cats», …). Повертає назву або None."""
     want = g.get("images", "random")
-    if want in (None, "", "default"):
-        return None
+    if want in (None, "", "default") or g.get("logged_in") is False:
+        return None  # набори картинок доступні лише з акаунтом
     try:
         opts = page.locator("button[role=radio]")
         n = opts.count()
@@ -192,6 +192,10 @@ def _pick_images(page, g, avoid=None, hist=None):
         i = random.choices(pool, weights=[perf.get(names[i], 1.0) for i in pool])[0]
         opts.nth(i).click(timeout=5000)
         page.wait_for_timeout(1500)  # дати картинкам завантажитися
+        if re.search(r"/(register|login)", page.url):  # сайт вимагає вхід — повертаємось без картинок
+            page.go_back(wait_until="domcontentloaded")
+            g["logged_in"] = False
+            return None
         return names[i]
     except Exception:  # noqa: BLE001
         return None
@@ -484,6 +488,29 @@ def _render_one(page, g, out_dir, log, gens, hist):
     return path
 
 
+def login_with_password(page, g, email, password, log):
+    """Вхід поштою й паролем (для хмари). Повертає True, якщо вдалося."""
+    page.goto(f"{g['site']}/login", wait_until="domcontentloaded")
+    page.wait_for_timeout(1500)
+    try:
+        page.get_by_role("button", name=re.compile(r"^\s*(Reject|Reject all|Decline|Відхилити)\s*$")).first.click(timeout=2000)
+    except Exception:  # noqa: BLE001
+        pass
+    email_box = page.locator("input[type=email], input[name=email], input[autocomplete=email], input[autocomplete=username]").first
+    pass_box = page.locator("input[type=password]").first
+    email_box.fill(email, timeout=15000)
+    pass_box.fill(password, timeout=15000)
+    pass_box.press("Enter")
+    try:
+        page.wait_for_url(lambda u: "/login" not in u, timeout=20000)
+    except Exception:  # noqa: BLE001
+        pass
+    page.wait_for_timeout(1500)
+    ok = "/login" not in page.url and page.get_by_role("link", name=re.compile(r"^\s*(Sign in|Увійти)\s*$")).count() == 0
+    log("Вхід у Stimreel: " + ("успішно" if ok else "НЕ вдався (перевір пошту й пароль у секретах GitHub)"))
+    return ok
+
+
 def login(cfg, log=print):
     """Звичайне (не автоматизоване) вікно Chrome з профілем скрипта — Google його пропускає."""
     g = settings(cfg)
@@ -547,7 +574,7 @@ def check_games(cfg, log=print):
     return gens
 
 
-def generate(cfg, count, out_dir, log=print):
+def generate(cfg, count, out_dir, log=print, credentials=None):
     """Згенерувати count відео в out_dir. Повертає список шляхів."""
     from playwright.sync_api import sync_playwright
 
@@ -567,6 +594,8 @@ def generate(cfg, count, out_dir, log=print):
                 # мова сайту запам'ятовується в cookie NEXT_LOCALE — ставимо потрібну
                 ctx.add_cookies([{"name": "NEXT_LOCALE", "value": g["lang"], "url": "https://stimreel.com"}])
                 page = ctx.new_page()
+                if credentials:
+                    g["logged_in"] = login_with_password(page, g, *credentials, log)
                 hist = _load_hist()
                 gens = _generators(page, g, hist, log)
                 fails = 0

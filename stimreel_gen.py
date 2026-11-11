@@ -408,14 +408,23 @@ def _set_export(page, g):
 
 
 def _wait_enabled(btn, seconds):
-    for _ in range(int(seconds * 2)):
+    deadline = time.time() + seconds
+    while time.time() < deadline:
         try:
-            if btn.is_enabled():
+            if btn.is_enabled(timeout=3000):
                 return True
         except Exception:  # noqa: BLE001
             pass
         time.sleep(0.5)
     return False
+
+
+def _pause_preview(page):
+    """Зупинити анімацію прев'ю: без відеокарти вона з'їдає весь процесор. На рендер не впливає."""
+    try:
+        page.get_by_role("button", name=re.compile(r"^\s*(Pause|Пауза)\s*$")).first.click(timeout=3000)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _render_one(page, g, out_dir, log, gens, hist):
@@ -433,6 +442,7 @@ def _render_one(page, g, out_dir, log, gens, hist):
         page.get_by_role("button", name=re.compile(r"^\s*(Reject|Reject all|Decline|Відхилити)\s*$")).first.click(timeout=3000)
     except Exception:  # noqa: BLE001
         pass
+    _pause_preview(page)
     changed = _randomize(page, g)
     if changed:
         log("Налаштування: " + ", ".join(changed))
@@ -449,6 +459,7 @@ def _render_one(page, g, out_dir, log, gens, hist):
         except Exception:  # noqa: BLE001
             pass
         changed = []
+        _pause_preview(page)
         _set_export(page, g)
         if not _wait_enabled(render_btn, 30):
             raise RuntimeError("кнопка рендеру неактивна навіть зі стандартними налаштуваннями")

@@ -128,7 +128,10 @@ def _start_chrome(exe, headless):
             "--no-first-run", "--no-default-browser-check", "--window-size=1280,900",
             "--autoplay-policy=no-user-gesture-required", "--lang=en-US",
             "--disable-component-update", "--disable-background-networking",
-            "--disable-features=OptimizationHints,MediaRouter", "--log-level=3"]
+            "--disable-features=OptimizationHints,MediaRouter", "--log-level=3",
+            # не пригальмовувати сторінку у фоні — інакше рендер може стояти
+            "--disable-background-timer-throttling", "--disable-renderer-backgrounding",
+            "--disable-backgrounding-occluded-windows", "--ignore-gpu-blocklist"]
     if headless:
         args.append("--headless=new")
     # службові повідомлення Chrome (оновлення тощо) у консоль не виводимо

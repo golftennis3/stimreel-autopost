@@ -1,0 +1,26 @@
+{
+ "known": [
+  "peg-drop",
+  "marble-bounce",
+  "block-rush",
+  "merge-drop",
+  "stair-bounce",
+  "last-square",
+  "last-thread",
+  "marble-race"
+ ],
+ "checked": "2026-11-11",
+ "recent": [
+  {
+   "gen": "marble-race",
+   "seed": 2813271202,
+   "images": null,
+   "file": "20261111-223510_marble-race_2813271202.mp4",
+   "settings": [
+    "Count 3",
+    "Track length 14"
+   ],
+   "time": "2026-11-11T22:35:27"
+  }
+ ]
+}

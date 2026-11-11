@@ -385,7 +385,7 @@ def _render_one(page, g, out_dir, log, gens, hist):
     log(f"Генерую {gen} (seed {seed}) …")
     page.goto(f"{g['site']}/generators/{gen}?seed={seed}", wait_until="domcontentloaded")
     # кнопку шукаємо обома мовами — на випадок, якщо сайт таки відкрився іншою
-    render_btn = page.get_by_role("button", name=re.compile(r"^\s*(Render video|Відрендерити відео)\s*$"))
+    render_btn = page.get_by_role("button", name=re.compile(r"^\s*(Render video|Download video|Відрендерити відео|Завантажити відео)\s*$"))
     render_btn.wait_for(timeout=60000)
     try:  # банер cookie — відхиляємо
         page.get_by_role("button", name=re.compile(r"^\s*(Reject|Reject all|Decline|Відхилити)\s*$")).first.click(timeout=3000)

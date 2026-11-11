@@ -510,6 +510,16 @@ def login_with_password(page, g, email, password, log):
     err = page.locator("text=/(invalid|incorrect|wrong|невірн|неправильн)/i").count()
     ok = "/login" not in page.url and not err
     log("Вхід у Stimreel: " + ("успішно" if ok else "НЕ вдався (перевір пошту й пароль у секретах GitHub)"))
+    if not ok:  # діагностика без пароля: де ми і що пише сторінка
+        try:
+            os.makedirs(os.path.join(HERE, "out"), exist_ok=True)
+            page.screenshot(path=os.path.join(HERE, "out", "login.png"))
+            body = page.inner_text("main", timeout=3000) if page.locator("main").count() else page.inner_text("body")
+            log(f"  сторінка: {page.url}")
+            log("  текст: " + " | ".join(x.strip() for x in body.splitlines() if x.strip())[:500])
+            log(f"  полів пошти: {email_box.count()}, полів пароля: {pass_box.count()}")
+        except Exception as e:  # noqa: BLE001
+            log(f"  (діагностика не вдалася: {e})")
     return ok
 
 

@@ -624,6 +624,23 @@
     "Style Chiptune"
    ],
    "time": "2026-11-11T22:49:59"
+  },
+  {
+   "gen": "last-square",
+   "seed": 166925597,
+   "images": null,
+   "file": "20261111-225223_last-square_166925597.mp4",
+   "settings": [
+    "Count 5",
+    "Hearts 2",
+    "Speed 0.95",
+    "Size 0.75",
+    "Sudden death after (s) 30",
+    "Shape Hexagon",
+    "Palette Candy",
+    "Style Chiptune"
+   ],
+   "time": "2026-11-11T22:52:25"
   }
  ]
 }

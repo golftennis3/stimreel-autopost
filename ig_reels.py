@@ -342,7 +342,8 @@ def warn_token_age(cfg):
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ("check", "post", "run", "token", "pagetoken", "times", "generate", "login",
-                                                   "cloud-setup", "month", "games", "stats"):
+                                                   "cloud-setup", "month", "games", "stats",
+                                                   "cloud-keys"):
         print(__doc__)
         sys.exit(1)
     cmd = sys.argv[1]
@@ -368,6 +369,12 @@ def main():
         import cloud
         days = int(sys.argv[2]) if len(sys.argv) > 2 else None
         sys.exit(0 if cloud.month(cfg, days, log=log) else 1)
+    elif cmd == "cloud-keys":
+        import cloud
+        repo = (cfg.get("cloud") or {}).get("repo") or (cloud.gh("api", "user", "--jq", ".login") + "/stimreel-autopost")
+        cloud.gh("secret", "set", "IG_TOKEN", "--repo", repo, input_text=cfg["access_token"])
+        cloud.gh("secret", "set", "IG_USER_ID", "--repo", repo, input_text=str(cfg["ig_user_id"]))
+        log(f"Ключ Instagram збережено в секретах {repo}. Ніде не показується.")
     elif cmd == "stats":
         import stats
         try:

@@ -213,10 +213,12 @@ def score(r):
     return None, None
 
 
-def _table(h, key):
-    """Середній результат за ключем (gen / images) з урахуванням лише одного типу цифр."""
+def _table(h, key, gen=None):
+    """Середній результат за ключем (gen / images) з урахуванням лише одного типу цифр.
+    gen — рахувати лише відео цієї гри (для картинок окремо по кожній грі)."""
     rows = [(r.get(key) or ("невідома гра" if key == "gen" else None), *score(r))
-            for r in h["recent"] if r.get(key) or (key == "gen" and r.get("media_id"))]
+            for r in h["recent"] if (r.get(key) or (key == "gen" and r.get("media_id")))
+            and (gen is None or r.get("gen") == gen)]
     rows = [x for x in rows if x[0]]
     rows = [x for x in rows if x[1] is not None]
     if not rows:
@@ -230,12 +232,15 @@ def _table(h, key):
     return agg, kind, len(rows)
 
 
-def weights(cfg, h, key, names):
-    """Множники ваги для кожного варіанту. 1.0 — нейтрально."""
+def weights(cfg, h, key, names, gen=None):
+    """Множники ваги для кожного варіанту. 1.0 — нейтрально.
+    Для картинок спершу дивимось статистику саме цієї гри; якщо її замало — загальну."""
     s = stats_cfg(cfg)
     if not s["learn"] or random.random() < s["explore"]:
         return {n: 1.0 for n in names}
-    agg, _, total = _table(h, key)
+    agg, _, total = _table(h, key, gen) if gen else ({}, None, 0)
+    if total < s["min_posts"]:
+        agg, _, total = _table(h, key)
     if total < s["min_posts"]:
         return {n: 1.0 for n in names}
     overall = sum(t for _, t in agg.values()) / sum(n for n, _ in agg.values()) or 1.0
@@ -257,6 +262,14 @@ def report(cfg, log):
             continue
         unit = "переглядів" if kind == "views" else "балів залученості"
         log(f"{title} (у середньому {unit}, за {total} відео):")
+        for name, (n, tot) in sorted(agg.items(), key=lambda kv: -kv[1][1] / kv[1][0]):
+            log(f"  {name:<20} {tot / n:>9.0f}   ({n} відео)")
+    games = sorted({r.get("gen") for r in h["recent"] if r.get("gen") and r.get("images") and score(r)[0] is not None})
+    for gname in games:
+        agg, kind, total = _table(h, "images", gname)
+        if not agg:
+            continue
+        log(f"Картинки в {gname} ({total} відео):")
         for name, (n, tot) in sorted(agg.items(), key=lambda kv: -kv[1][1] / kv[1][0]):
             log(f"  {name:<20} {tot / n:>9.0f}   ({n} відео)")
     s = stats_cfg(cfg)

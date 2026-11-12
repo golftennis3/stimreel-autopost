@@ -34,7 +34,13 @@ DEFAULTS = {
     "length": "auto",           # "auto" — повний раунд, де він є (інакше 20 с); або 10 / 20 / 30 / 60; або "round"
     "resolution": "1080p",      # 720p / 1080p / 4K
     "fps": 30,                  # 30 / 60
-    "images": "random",         # набір картинок: "random", "default" або список, напр. ["Cats", "Animals"]
+    "images": "random",         # для ігор, яких немає в images_by_game
+    # "pictures" — завжди якийсь набір картинок (не Default); "default" — базова форма; "random" — будь-що
+    "images_by_game": {
+        "marble-race": "pictures", "block-rush": "pictures", "last-square": "pictures", "last-thread": "pictures",
+        "stair-bounce": "pictures",
+        "peg-drop": "default", "marble-bounce": "default", "merge-drop": "default",
+    },         # набір картинок: "random", "default" або список, напр. ["Cats", "Animals"]
     "randomize": True,          # перемішувати параметри генератора (числа, палітра, розкладка, звук)
     "random_strength": 0.7,     # 0..1 — яку частину діапазону кожного параметра використовувати
     "keep": [],                 # назви параметрів, які не чіпати, напр. ["Gravity", "Palette"]
@@ -161,37 +167,48 @@ def _logged_in(page):
         return False
 
 
-def _pick_images(page, g, avoid=None, hist=None):
-    """Обрати набір картинок (кнопки-радіо «За замовчуванням», «Cats», …). Повертає назву або None."""
-    want = g.get("images", "random")
-    if want in (None, "", "default") or g.get("logged_in") is False:
-        return None  # набори картинок доступні лише з акаунтом
+def _pick_images(page, g, avoid=None, hist=None, gen=None):
+    """Обрати набір картинок (кнопки-радіо «Default», «Cats», …) за правилом для цієї гри.
+    Повертає назву набору або None."""
+    want = (g.get("images_by_game") or {}).get(gen, g.get("images", "random"))
+    if want in (None, ""):
+        return None
     try:
         opts = page.locator("button[role=radio]")
         n = opts.count()
         names = [re.split(r"\s*(?:\n|зображень|up to \d+|\d+\s+pictures?|images?:)", opts.nth(i).inner_text().strip())[0].strip()
                  for i in range(n)]
         if not names:
-            return None  # у цього генератора немає наборів картинок
-        if want == "random":
-            pool = list(range(n))
-        else:
-            dflt = g["L"]["default"]
-            alias = {"default": dflt, "дефолт": dflt, "за замовчуванням": dflt}
-            wanted = {alias.get(w.strip().lower(), w.strip().lower()) for w in want}
-            pool = [i for i, nm in enumerate(names) if nm.lower() in wanted]
-            if not pool:
+            return None  # у цієї гри немає наборів картинок
+        is_default = [nm.lower() in ("default", "за замовчуванням") for nm in names]
+        if want == "default":
+            i = next((k for k, d in enumerate(is_default) if d), None)
+            if i is None:
                 return None
+            opts.nth(i).click(timeout=5000)
+            return names[i]
+        if g.get("logged_in") is False:
+            return None  # набори картинок доступні лише з акаунтом
+        if want == "pictures":
+            pool = [k for k in range(n) if not is_default[k]]
+        elif want == "random":
+            pool = list(range(n))
+        else:  # список назв
+            alias = {"default": "default", "дефолт": "default", "за замовчуванням": "default"}
+            wanted = {alias.get(w.strip().lower(), w.strip().lower()) for w in want}
+            pool = [k for k, nm in enumerate(names) if nm.lower() in wanted or (is_default[k] and "default" in wanted)]
+        if not pool:
+            return None
         if avoid and len(pool) > 1:  # не ті набори, що були щойно
-            pool = [i for i in pool if names[i] not in avoid] or pool
+            pool = [k for k in pool if names[k] not in avoid] or pool
         perf = {}
         if hist is not None:
             try:
                 import stats
-                perf = stats.weights({"stats": g.get("_stats", {})}, hist, "images", [names[i] for i in pool])
+                perf = stats.weights({"stats": g.get("_stats", {})}, hist, "images", [names[k] for k in pool], gen=gen)
             except Exception:  # noqa: BLE001
                 perf = {}
-        i = random.choices(pool, weights=[perf.get(names[i], 1.0) for i in pool])[0]
+        i = random.choices(pool, weights=[perf.get(names[k], 1.0) for k in pool])[0]
         opts.nth(i).click(timeout=5000)
         page.wait_for_timeout(1500)  # дати картинкам завантажитися
         if re.search(r"/(register|login)", page.url):  # сайт вимагає вхід — повертаємось без картинок
@@ -201,7 +218,6 @@ def _pick_images(page, g, avoid=None, hist=None):
         return names[i]
     except Exception:  # noqa: BLE001
         return None
-
 
 def _read_description(page, g):
     """Після рендеру сайт показує «Post description» з вкладками платформ — беремо потрібну."""
@@ -505,7 +521,7 @@ def _render_one(page, g, out_dir, log, gens, hist):
     changed = _randomize(page, g)
     if changed:
         log("Налаштування: " + ", ".join(changed))
-    img = _pick_images(page, g, avoid=prev_img, hist=hist)
+    img = _pick_images(page, g, avoid=prev_img, hist=hist, gen=gen)
     if img:
         log(f"Картинки: {img}")
     used = {r.get("seed") for r in hist["recent"] if r.get("gen") == gen}

@@ -38,6 +38,8 @@ DEFAULTS = {
     "randomize": True,          # перемішувати параметри генератора (числа, палітра, розкладка, звук)
     "random_strength": 0.7,     # 0..1 — яку частину діапазону кожного параметра використовувати
     "keep": [],                 # назви параметрів, які не чіпати, напр. ["Gravity", "Palette"]
+    "dramatic": True,           # «Find dramatic seeds»: брати один з найвидовищніших варіантів (Pro)
+    "dramatic_top": 3,          # з скількох найкращих обирати випадково
     "description": "Instagram Reels",  # з якої вкладки «Post description» брати опис ("" — не брати)
     "headless": True,           # рендерити без видимого вікна
     "browser_path": "",         # шлях до chrome.exe, якщо не знаходиться сам
@@ -167,7 +169,7 @@ def _pick_images(page, g, avoid=None, hist=None):
     try:
         opts = page.locator("button[role=radio]")
         n = opts.count()
-        names = [re.split(r"\s*(?:\n|зображень|\d+\s+pictures?|images?:)", opts.nth(i).inner_text().strip())[0].strip()
+        names = [re.split(r"\s*(?:\n|зображень|up to \d+|\d+\s+pictures?|images?:)", opts.nth(i).inner_text().strip())[0].strip()
                  for i in range(n)]
         if not names:
             return None  # у цього генератора немає наборів картинок
@@ -432,6 +434,39 @@ def _pause_preview(page):
         pass
 
 
+def _dramatic(page, g, used, log):
+    """Натиснути «Find dramatic seeds» і застосувати один з найкращих невикористаних варіантів.
+    Повертає (seed, оцінка) або (None, None), якщо інструмента немає чи він не спрацював."""
+    if not g.get("dramatic", True):
+        return None, None
+    try:
+        btn = page.get_by_role("button", name=re.compile(r"Find dramatic seeds|Знайти драматичні", re.I))
+        if btn.count() == 0:
+            return None, None
+        btn.first.click(timeout=5000)
+        use = page.get_by_role("button", name=re.compile(r"^\s*(Use seed|Використати)", re.I))
+        use.first.wait_for(timeout=180000)
+        page.wait_for_timeout(500)
+        rows = []
+        for i in range(use.count()):
+            # підіймаємось від кнопки, доки в блоці лише одна «Use seed» — це її рядок
+            text = use.nth(i).evaluate("""e => { const n = x => (x.innerText.match(/Use seed|Використати/g) || []).length;
+                let r = e; while (r.parentElement && n(r.parentElement) === 1) r = r.parentElement; return r.innerText; }""")
+            m = re.search(r"Drama\s*([\d.]+)\s*/\s*10.*?(\d{6,})", text.replace("\n", " "))
+            score, seed = (float(m.group(1)), int(m.group(2))) if m else (None, None)
+            rows.append((i, score, seed))
+        fresh = [r for r in rows if r[2] not in used] or rows
+        top = fresh[: max(1, int(g.get("dramatic_top", 3)))]
+        i, score, seed = random.choice(top)
+        use.nth(i).click(timeout=5000)
+        page.wait_for_timeout(800)
+        _pause_preview(page)
+        return seed, score
+    except Exception as e:  # noqa: BLE001
+        log(f"Dramatic seeds не спрацювало ({str(e).splitlines()[0][:100]}) — беру звичайний варіант.")
+        return None, None
+
+
 def _render_one(page, g, out_dir, log, gens, hist):
     gen = _choose_generator(gens, hist, g)
     seed = _new_seed(gen, hist)
@@ -454,6 +489,11 @@ def _render_one(page, g, out_dir, log, gens, hist):
     img = _pick_images(page, g, avoid=prev_img, hist=hist)
     if img:
         log(f"Картинки: {img}")
+    used = {r.get("seed") for r in hist["recent"] if r.get("gen") == gen}
+    d_seed, d_score = _dramatic(page, g, used, log)
+    if d_seed:
+        seed = d_seed
+        log(f"Dramatic seed: {seed}" + (f" (драма {d_score}/10)" if d_score is not None else ""))
     length = _set_export(page, g)
     if length:
         log(f"Довжина: {' '.join(length.split())}")

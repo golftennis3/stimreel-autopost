@@ -11,6 +11,7 @@ import base64
 import json
 import os
 import shutil
+import subprocess
 import sys
 import urllib.request
 
@@ -50,6 +51,26 @@ def host_cover(path):
         content = base64.b64encode(f.read()).decode()
     _gh_api("PUT", f"contents/covers/{name}", {"message": f"cover {name}", "content": content, "branch": "covers"})
     return f"https://raw.githubusercontent.com/{os.environ['GITHUB_REPOSITORY']}/covers/covers/{name}"
+
+
+def normalize_for_instagram(video):
+    """Instagram приймає MP4 з H.264 + AAC. Chrome на Linux не має кодувальника AAC, тож звук
+    із сайту приходить в іншому форматі — перекодовуємо (картинку без потреби не чіпаємо)."""
+    def probe(stream):
+        r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", stream, "-show_entries",
+                            "stream=codec_name", "-of", "csv=p=0", video], capture_output=True, text=True)
+        return r.stdout.strip().splitlines()[0] if r.stdout.strip() else ""
+    v, a = probe("v:0"), probe("a:0")
+    log(f"Кодеки: відео {v or '—'}, звук {a or 'немає'}")
+    if v == "h264" and a in ("aac", ""):
+        return video
+    out = os.path.splitext(video)[0] + ".ig.mp4"
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", video,
+           "-c:v", "copy" if v == "h264" else "libx264", *([] if v == "h264" else ["-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p"]),
+           "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-ac", "2", "-movflags", "+faststart", out]
+    subprocess.run(cmd, check=True)
+    log(f"Перекодовано для Instagram: {os.path.basename(out)} ({os.path.getsize(out) / 1e6:.1f} МБ)")
+    return out
 
 
 def main():
@@ -109,9 +130,15 @@ def main():
         if not publish:
             log(f"Згенеровано (без публікації): {name}")
             ok += 1
+        try:
+            upload = normalize_for_instagram(video)
+        except Exception as e:  # noqa: BLE001
+            log(f"Перекодування не вдалося ({e}) — пробую як є.")
+            upload = video
+        if not publish:
             continue
         try:
-            media_id = ig_reels.publish_reel(cfg, video, caption, cover_url=cover_url)
+            media_id = ig_reels.publish_reel(cfg, upload, caption, cover_url=cover_url)
             stats.record_post(name, media_id)
             log(f"Опубліковано: {name} → {media_id}")
             ok += 1

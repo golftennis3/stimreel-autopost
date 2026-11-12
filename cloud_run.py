@@ -96,18 +96,20 @@ def main():
         if os.path.exists(txt):
             with open(txt, encoding="utf-8") as f:
                 caption = f.read().strip() or caption
-        if not publish:
-            log(f"Згенеровано (без публікації): {name}")
-            ok += 1
-            continue
         cover_url = None
         jpg = os.path.splitext(video)[0] + ".jpg"
         if os.path.exists(jpg):
             try:
                 cover_url = host_cover(jpg)
-                log(f"Обкладинка: {cover_url}")
+                with urllib.request.urlopen(cover_url, timeout=30) as r:  # перевірка, що посилання відкривається
+                    log(f"Обкладинка: {cover_url} ({len(r.read()) // 1024} КБ)")
             except Exception as e:  # noqa: BLE001
                 log(f"Обкладинку не вдалося розмістити ({e}) — Instagram візьме кадр з відео.")
+                cover_url = None
+        if not publish:
+            log(f"Згенеровано (без публікації): {name}")
+            ok += 1
+            continue
         try:
             media_id = ig_reels.publish_reel(cfg, video, caption, cover_url=cover_url)
             stats.record_post(name, media_id)

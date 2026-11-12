@@ -9,7 +9,7 @@
   "last-thread",
   "marble-race"
  ],
- "checked": "2026-11-11",
+ "checked": "2026-11-12",
  "recent": [
   {
    "gen": null,
@@ -737,6 +737,23 @@
     "Openings Scattered"
    ],
    "time": "2026-11-11T23:09:18"
+  },
+  {
+   "gen": "marble-race",
+   "seed": 1495651361,
+   "images": "Cats",
+   "file": "20261112-060955_marble-race_1495651361.mp4",
+   "settings": [
+    "Count 4",
+    "Speed 1.1",
+    "Track length 9",
+    "Size 0.85",
+    "Palette Mono",
+    "Style Marimba"
+   ],
+   "time": "2026-11-12T06:09:57",
+   "media_id": "17917894770471268",
+   "posted_at": "2026-11-12T06:10:32"
   }
  ]
 }

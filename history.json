@@ -795,6 +795,43 @@
     "Palette Neon"
    ],
    "time": "2026-11-12T11:31:21"
+  },
+  {
+   "gen": "block-rush",
+   "seed": 754650058,
+   "images": "Cats",
+   "file": "20261112-113252_block-rush_754650058.mp4",
+   "settings": [
+    "Count 5",
+    "Speed 1.4",
+    "Length 6",
+    "Size 1.25",
+    "Width 6",
+    "Corridor width 3.2",
+    "Breakable walls (%) 25",
+    "Wall strength (hits) 12",
+    "Count 2",
+    "Zoom 0.95",
+    "View Whole maze",
+    "Palette Mono",
+    "Style Soft pops"
+   ],
+   "time": "2026-11-12T11:32:53"
+  },
+  {
+   "gen": "marble-race",
+   "seed": 1516730827,
+   "images": "Random",
+   "file": "20261112-113343_marble-race_1516730827.mp4",
+   "settings": [
+    "Count 3",
+    "Speed 1.45",
+    "Track length 11",
+    "Size 0.9",
+    "Palette Gold",
+    "Style Soft pops"
+   ],
+   "time": "2026-11-12T11:33:44"
   }
  ]
 }

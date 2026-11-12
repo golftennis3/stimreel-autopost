@@ -832,6 +832,24 @@
     "Style Soft pops"
    ],
    "time": "2026-11-12T11:33:44"
+  },
+  {
+   "gen": "last-thread",
+   "seed": 1377991505,
+   "images": "Politics",
+   "file": "20261112-114045_last-thread_1377991505.mp4",
+   "settings": [
+    "Count 3",
+    "Threads each 25",
+    "Speed 0.85",
+    "Round length (s) 75",
+    "Size 0.8",
+    "Fan width 0.35",
+    "Thread brightness 0.75",
+    "Palette Gold",
+    "Style Glass chimes"
+   ],
+   "time": "2026-11-12T11:40:47"
   }
  ]
 }

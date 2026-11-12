@@ -850,6 +850,27 @@
     "Style Glass chimes"
    ],
    "time": "2026-11-12T11:40:47"
+  },
+  {
+   "gen": "marble-bounce",
+   "seed": 4082725706,
+   "images": "Stariy Bog",
+   "file": "20261112-114346_marble-bounce_4082725706.mp4",
+   "settings": [
+    "Count 4",
+    "Count 43",
+    "Size 1.2",
+    "Thickness 52",
+    "Rotation speed 1.4",
+    "Opening size (°) 82",
+    "Spiral twist (°) 23",
+    "Gravity 1.8",
+    "Colours Fade to one colour",
+    "Palette Candy",
+    "Style Marimba",
+    "Openings Scattered"
+   ],
+   "time": "2026-11-12T11:43:48"
   }
  ]
 }

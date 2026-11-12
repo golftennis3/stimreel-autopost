@@ -902,6 +902,23 @@
     "Style Marimba"
    ],
    "time": "2026-11-12T14:50:13"
+  },
+  {
+   "gen": "peg-drop",
+   "seed": 398016864,
+   "images": "Politics",
+   "file": "20261112-145547_peg-drop_398016864.mp4",
+   "settings": [
+    "Balls per second 11",
+    "Size 1.35",
+    "Bounciness 0.55",
+    "Rows 8",
+    "Gravity 1.9",
+    "Layout Pyramid",
+    "Palette Mono",
+    "Style Soft pops"
+   ],
+   "time": "2026-11-12T14:55:48"
   }
  ]
 }

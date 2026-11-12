@@ -38,8 +38,8 @@ DEFAULTS = {
     # "pictures" — завжди якийсь набір картинок (не Default); "default" — базова форма; "random" — будь-що
     "images_by_game": {
         "marble-race": "pictures", "block-rush": "pictures", "last-square": "pictures", "last-thread": "pictures",
-        "stair-bounce": "pictures",
-        "peg-drop": "default", "marble-bounce": "default", "merge-drop": "default",
+        "stair-bounce": "pictures", "merge-drop": "pictures",
+        "peg-drop": "default", "marble-bounce": "default",
     },         # набір картинок: "random", "default" або список, напр. ["Cats", "Animals"]
     "randomize": True,          # перемішувати параметри генератора (числа, палітра, розкладка, звук)
     "random_strength": 0.7,     # 0..1 — яку частину діапазону кожного параметра використовувати

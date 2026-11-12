@@ -36,6 +36,7 @@ jobs:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           STIMREEL_EMAIL: ${{ secrets.STIMREEL_EMAIL }}
           STIMREEL_PASSWORD: ${{ secrets.STIMREEL_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Keep videos for 3 days
         if: always()
         uses: actions/upload-artifact@v4

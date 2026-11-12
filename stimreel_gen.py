@@ -467,6 +467,25 @@ def _dramatic(page, g, used, log):
         return None, None
 
 
+def _save_thumbnail(page, base_path):
+    """Забрати обкладинку, яку сайт генерує для цього варіанта (a[download$=thumbnail.jpg])."""
+    try:
+        b64 = page.evaluate("""async () => {
+            const a = document.querySelector('a[download*="thumbnail"]');
+            if (!a || !a.href) return null;
+            const buf = new Uint8Array(await (await fetch(a.href)).arrayBuffer());
+            let bin = ''; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+            return btoa(bin); }""")
+        if not b64:
+            return None
+        path = base_path + ".jpg"
+        with open(path, "wb") as f:
+            f.write(base64.b64decode(b64))
+        return path
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _render_one(page, g, out_dir, log, gens, hist):
     gen = _choose_generator(gens, hist, g)
     seed = _new_seed(gen, hist)
@@ -520,11 +539,12 @@ def _render_one(page, g, out_dir, log, gens, hist):
     with open(path, "wb") as f:
         for s in range(0, size, step):
             f.write(base64.b64decode(page.evaluate(READ_CHUNK, [s, min(s + step, size)])))
+    thumb = _save_thumbnail(page, os.path.splitext(path)[0]) if g.get("thumbnail", True) else None
     desc = _read_description(page, g)
     if desc:
         with open(os.path.splitext(path)[0] + ".txt", "w", encoding="utf-8") as f:
             f.write(desc)
-    log(f"Готово: {name} ({size / 1e6:.1f} МБ){' + опис' if desc else ' (опис не знайдено)'}")
+    log(f"Готово: {name} ({size / 1e6:.1f} МБ){' + опис' if desc else ' (опис не знайдено)'}{' + обкладинка' if thumb else ''}")
     hist["recent"].append({"gen": gen, "seed": seed, "images": img, "file": name,
                            "settings": changed, "time": datetime.now().isoformat(timespec="seconds")})
     _save_hist(hist)

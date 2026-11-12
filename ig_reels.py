@@ -143,20 +143,21 @@ def ensure_mp4(video):
 
 
 def move_with_caption(video, dest_dir):
-    for p in (video, os.path.splitext(video)[0] + ".txt"):
+    for p in (video, os.path.splitext(video)[0] + ".txt", os.path.splitext(video)[0] + ".jpg"):
         if os.path.exists(p):
             shutil.move(p, os.path.join(dest_dir, os.path.basename(p)))
 
 
 # ---------- публікація ----------
 
-def publish_reel(cfg, video, caption):
+def publish_reel(cfg, video, caption, cover_url=None):
     ig = cfg["ig_user_id"]
     size = os.path.getsize(video)
 
     # 1. Контейнер з resumable upload
+    extra = {"cover_url": cover_url} if cover_url else {}
     c = graph(cfg, "POST", f"{ig}/media", media_type="REELS", upload_type="resumable",
-              caption=caption, share_to_feed=str(cfg["share_to_feed"]).lower())
+              caption=caption, share_to_feed=str(cfg["share_to_feed"]).lower(), **extra)
     cid = c["id"]
     log(f"Контейнер {cid} створено, завантажую {size/1e6:.1f} МБ …")
 

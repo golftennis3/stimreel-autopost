@@ -7,9 +7,12 @@ cloud_run.py — повний цикл у хмарі GitHub: оновити ст
   STIMREEL_EMAIL, STIMREEL_PASSWORD — акаунт бота на Stimreel (вносиш сам)
 Змінні запуску: COUNT (скільки відео), PUBLISH ("true"/"false").
 """
+import base64
+import json
 import os
 import shutil
 import sys
+import urllib.request
 
 import ig_reels
 import stats
@@ -21,6 +24,32 @@ OUT = os.path.join(HERE, "out")
 
 def log(msg):
     print(msg, flush=True)
+
+
+def _gh_api(method, path, body=None):
+    req = urllib.request.Request(f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/{path}",
+                                 method=method, data=json.dumps(body).encode() if body else None,
+                                 headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                                          "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read() or b"{}")
+
+
+def host_cover(path):
+    """Покласти обкладинку в гілку covers публічного репозиторію й повернути пряме посилання на неї
+    (Instagram бере обкладинку лише за публічним URL)."""
+    if not (os.environ.get("GH_TOKEN") and os.environ.get("GITHUB_REPOSITORY")):
+        return None
+    try:
+        _gh_api("GET", "branches/covers")
+    except Exception:  # noqa: BLE001  — гілки ще немає: створюємо від main
+        sha = _gh_api("GET", "git/ref/heads/main")["object"]["sha"]
+        _gh_api("POST", "git/refs", {"ref": "refs/heads/covers", "sha": sha})
+    name = os.path.basename(path)
+    with open(path, "rb") as f:
+        content = base64.b64encode(f.read()).decode()
+    _gh_api("PUT", f"contents/covers/{name}", {"message": f"cover {name}", "content": content, "branch": "covers"})
+    return f"https://raw.githubusercontent.com/{os.environ['GITHUB_REPOSITORY']}/covers/covers/{name}"
 
 
 def main():
@@ -71,8 +100,16 @@ def main():
             log(f"Згенеровано (без публікації): {name}")
             ok += 1
             continue
+        cover_url = None
+        jpg = os.path.splitext(video)[0] + ".jpg"
+        if os.path.exists(jpg):
+            try:
+                cover_url = host_cover(jpg)
+                log(f"Обкладинка: {cover_url}")
+            except Exception as e:  # noqa: BLE001
+                log(f"Обкладинку не вдалося розмістити ({e}) — Instagram візьме кадр з відео.")
         try:
-            media_id = ig_reels.publish_reel(cfg, video, caption)
+            media_id = ig_reels.publish_reel(cfg, video, caption, cover_url=cover_url)
             stats.record_post(name, media_id)
             log(f"Опубліковано: {name} → {media_id}")
             ok += 1

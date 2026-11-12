@@ -594,7 +594,16 @@
    "images": null,
    "imported": true,
    "media_id": "18190261840410657",
-   "posted_at": "2026-11-11T13:20:19"
+   "posted_at": "2026-11-11T13:20:19",
+   "stats": {
+    "views": 1099,
+    "reach": 1029,
+    "likes": 2,
+    "comments": 0,
+    "shares": 0,
+    "saved": 0
+   },
+   "stats_at": "2026-11-12T14:49:00"
   },
   {
    "gen": "peg-drop",
@@ -871,6 +880,28 @@
     "Openings Scattered"
    ],
    "time": "2026-11-12T11:43:48"
+  },
+  {
+   "gen": "block-rush",
+   "seed": 286712550,
+   "images": "Things",
+   "file": "20261112-145012_block-rush_286712550.mp4",
+   "settings": [
+    "Count 6",
+    "Speed 1.25",
+    "Length 6",
+    "Size 1.05",
+    "Width 6",
+    "Corridor width 2.9",
+    "Breakable walls (%) 20",
+    "Wall strength (hits) 14",
+    "Count 2",
+    "Zoom 1.6",
+    "View Whole maze",
+    "Palette Ocean",
+    "Style Marimba"
+   ],
+   "time": "2026-11-12T14:50:13"
   }
  ]
 }

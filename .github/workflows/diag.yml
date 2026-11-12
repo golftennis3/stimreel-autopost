@@ -1,0 +1,18 @@
+name: Diagnose
+on: { workflow_dispatch: {} }
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install playwright
+      - run: xvfb-run -a python diag_dramatic.py
+        env:
+          STIMREEL_EMAIL: ${{ secrets.STIMREEL_EMAIL }}
+          STIMREEL_PASSWORD: ${{ secrets.STIMREEL_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: diag, path: "out/", if-no-files-found: ignore, retention-days: 3 }

@@ -945,6 +945,62 @@
     "Style Chiptune"
    ],
    "time": "2026-11-12T15:05:07"
+  },
+  {
+   "gen": "block-rush",
+   "seed": 3725079142,
+   "images": "Default",
+   "file": "20261112-151122_block-rush_3725079142.mp4",
+   "settings": [
+    "Count 5",
+    "Speed 0.95",
+    "Length 10",
+    "Size 1.05",
+    "Width 4",
+    "Corridor width 3.7",
+    "Breakable walls (%) 40",
+    "Wall strength (hits) 21",
+    "Count 2",
+    "Zoom 1.25",
+    "View Whole maze",
+    "Palette Aurora",
+    "Style Glass chimes"
+   ],
+   "time": "2026-11-12T15:11:23"
+  },
+  {
+   "gen": "stair-bounce",
+   "seed": 1197581814,
+   "images": "Cat",
+   "file": "20261112-151306_stair-bounce_1197581814.mp4",
+   "settings": [
+    "Speed 3",
+    "Bounciness 0.55",
+    "Steps 51",
+    "Size 1.15",
+    "Spin speed 1.35",
+    "Variety 0.7",
+    "Gravity 1.75",
+    "Zoom 2.05",
+    "Colours One colour",
+    "Palette Sunset"
+   ],
+   "time": "2026-11-12T15:13:10"
+  },
+  {
+   "gen": "merge-drop",
+   "seed": 4124005187,
+   "images": "John Pork",
+   "file": "20261112-151425_merge-drop_4124005187.mp4",
+   "settings": [
+    "Drop speed 1.6",
+    "Bounciness 0.25",
+    "Size 0.9",
+    "Gravity 1.8",
+    "Colours Rainbow",
+    "Palette Candy"
+   ],
+   "time": "2026-11-12T15:14:26"
   }
  ]
 }

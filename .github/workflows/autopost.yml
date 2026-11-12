@@ -45,7 +45,18 @@ jobs:
       - name: Save history
         if: always()
         run: |
+          [ -f history.json ] || exit 0
           git config user.name "stimreel-bot"
           git config user.email "stimreel-bot@users.noreply.github.com"
-          git add history.json 2>/dev/null || true
-          git diff --cached --quiet || (git commit -m "history: update" && git pull --rebase -q && git push -q)
+          cp history.json /tmp/history.new.json
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main
+            git checkout -q -f -B main origin/main
+            python merge_history.py /tmp/history.new.json history.json
+            git add history.json
+            git diff --cached --quiet && exit 0
+            git commit -q -m "history: update"
+            git push -q origin main && exit 0
+            sleep $((i * 3))
+          done
+          exit 1

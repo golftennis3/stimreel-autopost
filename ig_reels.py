@@ -151,6 +151,16 @@ def move_with_caption(video, dest_dir):
 # ---------- публікація ----------
 
 def publish_reel(cfg, video, caption, cover_url=None):
+    """Опублікувати Reel. Якщо Instagram не прийняв обкладинку — повторити без неї."""
+    if cover_url:
+        try:
+            return _publish_reel(cfg, video, caption, cover_url)
+        except Exception as e:  # noqa: BLE001
+            log(f"З обкладинкою не вийшло ({str(e)[:160]}) — публікую без неї.")
+    return _publish_reel(cfg, video, caption, None)
+
+
+def _publish_reel(cfg, video, caption, cover_url=None):
     ig = cfg["ig_user_id"]
     size = os.path.getsize(video)
 
@@ -216,6 +226,33 @@ def cmd_generate(cfg, n):
     return len(made) == n
 
 
+def host_cover_local(cfg, jpg):
+    """Покласти обкладинку в гілку covers репозиторію GitHub через GitHub CLI (gh)
+    і повернути публічне посилання. Якщо gh немає чи не залогінений — None."""
+    import base64
+    import cloud
+    if not cloud.find_gh():
+        return None
+    c = cfg.get("cloud") or {}
+    repo = c.get("repo") or (cloud.gh("api", "user", "--jq", ".login") + "/stimreel-autopost")
+    if not cloud.gh("api", f"repos/{repo}/branches/covers", "--jq", ".name", check=False).strip() == "covers":
+        sha = cloud.gh("api", f"repos/{repo}/git/ref/heads/main", "--jq", ".object.sha")
+        cloud.gh("api", "-X", "POST", f"repos/{repo}/git/refs", "-f", "ref=refs/heads/covers", "-f", f"sha={sha}")
+    name = os.path.basename(jpg)
+    with open(jpg, "rb") as f:
+        body = {"message": f"cover {name}", "content": base64.b64encode(f.read()).decode(), "branch": "covers"}
+    cloud.gh("api", "-X", "PUT", f"repos/{repo}/contents/covers/{name}", "--input", "-", input_text=json.dumps(body))
+    url = f"https://raw.githubusercontent.com/{repo}/covers/covers/{name}"
+    for _ in range(6):  # дочекатися, поки посилання почне відкриватися
+        try:
+            with urllib.request.urlopen(url, timeout=20) as r:
+                r.read(16)
+            return url
+        except Exception:  # noqa: BLE001
+            time.sleep(5)
+    return None
+
+
 def cmd_post(cfg):
     try:  # оновити цифри з Instagram — щоб вибір гри враховував, що заходить
         import stats
@@ -231,7 +268,16 @@ def cmd_post(cfg):
     try:
         caption = caption_for(cfg, video)
         video = ensure_mp4(video)
-        media_id = publish_reel(cfg, video, caption)
+        cover_url = None
+        jpg = os.path.splitext(video)[0] + ".jpg"
+        if os.path.exists(jpg) and (cfg.get("cover", True)):
+            try:
+                cover_url = host_cover_local(cfg, jpg)
+                if cover_url:
+                    log(f"Обкладинка: {cover_url}")
+            except Exception as e:  # noqa: BLE001
+                log(f"Обкладинку не вдалося розмістити ({str(e)[:150]}) — буде кадр з відео.")
+        media_id = publish_reel(cfg, video, caption, cover_url=cover_url)
     except Exception as e:  # noqa: BLE001
         log(f"ПОМИЛКА з {name}: {e}")
         if os.path.exists(video):

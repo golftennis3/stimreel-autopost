@@ -1073,6 +1073,23 @@
     "Palette Ocean"
    ],
    "time": "2026-11-13T03:41:55"
+  },
+  {
+   "gen": "last-square",
+   "seed": 145871067,
+   "images": "Cats",
+   "file": "20261113-035021_last-square_145871067.mp4",
+   "settings": [
+    "Count 6",
+    "Hearts 4",
+    "Speed 1.2",
+    "Size 1.3",
+    "Sudden death after (s) 35",
+    "Shape Hexagon",
+    "Palette Neon",
+    "Style Music box"
+   ],
+   "time": "2026-11-13T03:50:23"
   }
  ]
 }

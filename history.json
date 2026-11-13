@@ -9,7 +9,7 @@
   "last-thread",
   "marble-race"
  ],
- "checked": "2026-11-12",
+ "checked": "2026-11-13",
  "recent": [
   {
    "gen": null,
@@ -725,7 +725,16 @@
    ],
    "time": "2026-11-11T22:59:30",
    "media_id": "18088461545319179",
-   "posted_at": "2026-11-11T23:00:04"
+   "posted_at": "2026-11-11T23:00:04",
+   "stats": {
+    "views": 130,
+    "reach": 110,
+    "likes": 0,
+    "comments": 0,
+    "shares": 0,
+    "saved": 0
+   },
+   "stats_at": "2026-11-13T03:23:26"
   },
   {
    "gen": "peg-drop",
@@ -1030,6 +1039,21 @@
    "time": "2026-11-12T21:43:24",
    "media_id": "18119163022817845",
    "posted_at": "2026-11-12T21:44:11"
+  },
+  {
+   "gen": "marble-race",
+   "seed": 279695180,
+   "images": "Cats",
+   "file": "20261113-032639_marble-race_279695180.mp4",
+   "settings": [
+    "Count 3",
+    "Speed 0.75",
+    "Track length 17",
+    "Size 0.9",
+    "Palette Aurora",
+    "Style Marimba"
+   ],
+   "time": "2026-11-13T03:26:43"
   }
  ]
 }

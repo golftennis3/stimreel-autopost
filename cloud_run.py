@@ -8,6 +8,7 @@ cloud_run.py — повний цикл у хмарі GitHub: оновити ст
 Змінні запуску: COUNT (скільки відео), PUBLISH ("true"/"false").
 """
 import base64
+import time
 import json
 import os
 import shutil
@@ -34,6 +35,37 @@ def _gh_api(method, path, body=None):
                                           "Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.loads(r.read() or b"{}")
+
+
+def _host_file(path, folder):
+    """Покласти файл у гілку covers публічного репозиторію й повернути пряме посилання."""
+    if not (os.environ.get("GH_TOKEN") and os.environ.get("GITHUB_REPOSITORY")):
+        return None
+    try:
+        _gh_api("GET", "branches/covers")
+    except Exception:  # noqa: BLE001  — гілки ще немає: створюємо від main
+        sha = _gh_api("GET", "git/ref/heads/main")["object"]["sha"]
+        _gh_api("POST", "git/refs", {"ref": "refs/heads/covers", "sha": sha})
+    name = os.path.basename(path)
+    with open(path, "rb") as f:
+        content = base64.b64encode(f.read()).decode()
+    _gh_api("PUT", f"contents/{folder}/{name}", {"message": f"{folder} {name}", "content": content, "branch": "covers"})
+    return f"https://raw.githubusercontent.com/{os.environ['GITHUB_REPOSITORY']}/covers/{folder}/{name}"
+
+
+def host_video(path):
+    url = _host_file(path, "videos")
+    if not url:
+        raise RuntimeError("немає GH_TOKEN — нема куди викласти відео")
+    for _ in range(12):  # чекаємо, поки посилання почне віддавати файл
+        try:
+            with urllib.request.urlopen(url, timeout=60) as r:
+                if len(r.read()) == os.path.getsize(path):
+                    return url
+        except Exception:  # noqa: BLE001
+            pass
+        time.sleep(5)
+    return url
 
 
 def host_cover(path):
@@ -166,7 +198,7 @@ def main():
         if not publish:
             continue
         try:
-            media_id = ig_reels.publish_reel(cfg, upload, caption, cover_url=cover_url)
+            media_id = ig_reels.publish_reel(cfg, upload, caption, cover_url=cover_url, host_video=host_video)
             stats.record_post(name, media_id)
             log(f"Опубліковано: {name} → {media_id}")
             ok += 1

@@ -150,17 +150,33 @@ def move_with_caption(video, dest_dir):
 
 # ---------- публікація ----------
 
-def publish_reel(cfg, video, caption, cover_url=None):
-    """Опублікувати Reel. Якщо Instagram не прийняв обкладинку — повторити без неї."""
-    if cover_url:
-        try:
-            return _publish_reel(cfg, video, caption, cover_url)
-        except Exception as e:  # noqa: BLE001
-            log(f"З обкладинкою не вийшло ({str(e)[:160]}) — публікую без неї.")
-    return _publish_reel(cfg, video, caption, None)
+def publish_reel(cfg, video, caption, cover_url=None, host_video=None):
+    """Опублікувати Reel. Спершу пряме завантаження файлу; якщо Instagram його не прийняв —
+    (якщо передано host_video) викласти відео за публічним посиланням і дати Instagram забрати його самому.
+    На кожному шляху: спершу з обкладинкою, потім без неї."""
+    errors = []
+
+    def attempt(url):
+        if cover_url:
+            try:
+                return _publish_reel(cfg, video, caption, cover_url, url)
+            except Exception as e:  # noqa: BLE001
+                log(f"З обкладинкою не вийшло ({str(e)[:160]}) — пробую без неї.")
+        return _publish_reel(cfg, video, caption, None, url)
+
+    try:
+        return attempt(None)
+    except Exception as e:  # noqa: BLE001
+        errors.append(e)
+        if not host_video:
+            raise
+        log(f"Пряме завантаження не вдалося ({str(e)[:160]}) — пробую через публічне посилання.")
+    url = host_video(video)
+    log(f"Відео за посиланням: {url}")
+    return attempt(url)
 
 
-def _publish_reel(cfg, video, caption, cover_url=None):
+def _publish_reel(cfg, video, caption, cover_url=None, video_url=None):
     ig = cfg["ig_user_id"]
     size = os.path.getsize(video)
 
@@ -171,15 +187,19 @@ def _publish_reel(cfg, video, caption, cover_url=None):
     cid = c["id"]
     log(f"Контейнер {cid} створено, завантажую {size/1e6:.1f} МБ …")
 
-    # 2. Завантаження файлу на rupload
-    with open(video, "rb") as f:
-        data = f.read()
-    up = http("POST", f"{cfg['upload_host']}/ig-api-upload/{cfg['api_version']}/{cid}",
-              data=data, timeout=600, headers={
-                  "Authorization": f"OAuth {cfg['access_token']}",
-                  "offset": "0",
-                  "file_size": str(size),
-              })
+    # 2. Завантаження: або сам файл, або посилання, з якого Instagram забере файл
+    url = f"{cfg['upload_host']}/ig-api-upload/{cfg['api_version']}/{cid}"
+    if video_url:
+        up = http("POST", url, data=b"", timeout=600, headers={
+            "Authorization": f"OAuth {cfg['access_token']}", "file_url": video_url})
+    else:
+        with open(video, "rb") as f:
+            data = f.read()
+        up = http("POST", url, data=data, timeout=600, headers={
+            "Authorization": f"OAuth {cfg['access_token']}",
+            "offset": "0",
+            "file_size": str(size),
+        })
     if not up.get("success", True):
         raise RuntimeError(f"Завантаження не вдалося: {up}")
 

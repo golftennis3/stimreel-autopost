@@ -54,22 +54,36 @@ def host_cover(path):
 
 
 def normalize_for_instagram(video):
-    """Instagram приймає MP4 з H.264 + AAC. Chrome на Linux не має кодувальника AAC, тож звук
-    із сайту приходить в іншому форматі — перекодовуємо (картинку без потреби не чіпаємо)."""
-    def probe(stream):
-        r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", stream, "-show_entries",
-                            "stream=codec_name", "-of", "csv=p=0", video], capture_output=True, text=True)
-        return r.stdout.strip().splitlines()[0] if r.stdout.strip() else ""
-    v, a = probe("v:0"), probe("a:0")
-    log(f"Кодеки: відео {v or '—'}, звук {a or 'немає'}")
-    if v == "h264" and a in ("aac", ""):
-        return video
+    """Привести відео до вимог Instagram Reels: H.264 (High, yuv420p), ПОСТІЙНІ 30 кадр/с,
+    закритий GOP, бітрейт до ~12 Мбіт/с, AAC 44.1 кГц стерео, moov на початку файлу.
+    Браузерний рендер може мати «плаваючу» частоту кадрів — Instagram такі файли інколи відхиляє."""
+    def info():
+        r = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                            "format=duration,bit_rate:stream=codec_type,codec_name,profile,pix_fmt,width,height,r_frame_rate,avg_frame_rate",
+                            "-of", "json", video], capture_output=True, text=True)
+        return json.loads(r.stdout or "{}")
+    try:
+        meta = info()
+        fmt = meta.get("format", {})
+        parts = [f"{float(fmt.get('duration', 0)):.1f} с", f"{int(fmt.get('bit_rate', 0)) / 1e6:.1f} Мбіт/с"]
+        for st in meta.get("streams", []):
+            if st.get("codec_type") == "video":
+                parts.append(f"{st.get('codec_name')} {st.get('profile')} {st.get('width')}x{st.get('height')} "
+                             f"{st.get('pix_fmt')} r={st.get('r_frame_rate')} avg={st.get('avg_frame_rate')}")
+            elif st.get("codec_type") == "audio":
+                parts.append(f"звук {st.get('codec_name')}")
+        log("Файл: " + ", ".join(parts))
+    except Exception:  # noqa: BLE001
+        pass
     out = os.path.splitext(video)[0] + ".ig.mp4"
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", video,
-           "-c:v", "copy" if v == "h264" else "libx264", *([] if v == "h264" else ["-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p"]),
-           "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-ac", "2", "-movflags", "+faststart", out]
+           "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-profile:v", "high", "-level", "4.1",
+           "-pix_fmt", "yuv420p", "-r", "30", "-fps_mode", "cfr", "-g", "60", "-keyint_min", "60",
+           "-sc_threshold", "0", "-maxrate", "12M", "-bufsize", "24M",
+           "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-ac", "2",
+           "-movflags", "+faststart", out]
     subprocess.run(cmd, check=True)
-    log(f"Перекодовано для Instagram: {os.path.basename(out)} ({os.path.getsize(out) / 1e6:.1f} МБ)")
+    log(f"Підготовлено для Instagram: {os.path.basename(out)} ({os.path.getsize(out) / 1e6:.1f} МБ)")
     return out
 
 

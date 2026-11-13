@@ -1090,6 +1090,30 @@
     "Style Music box"
    ],
    "time": "2026-11-13T03:50:23"
+  },
+  {
+   "gen": "block-rush",
+   "seed": 1270267273,
+   "images": "Laughing cats",
+   "file": "20261113-040407_block-rush_1270267273.mp4",
+   "settings": [
+    "Count 5",
+    "Speed 1.4",
+    "Length 14",
+    "Size 1.15",
+    "Width 6",
+    "Corridor width 3.6",
+    "Breakable walls (%) 70",
+    "Wall strength (hits) 24",
+    "Count 2",
+    "Zoom 1.25",
+    "View Whole maze",
+    "Palette Aurora",
+    "Style Glass chimes"
+   ],
+   "time": "2026-11-13T04:04:09",
+   "media_id": "18119933921015842",
+   "posted_at": "2026-11-13T04:07:23"
   }
  ]
 }

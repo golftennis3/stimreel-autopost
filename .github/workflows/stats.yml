@@ -1,0 +1,39 @@
+name: Stats
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: autopost
+  cancel-in-progress: false
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Update and show statistics
+        run: python cloud_run.py --stats
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      - name: Save history
+        if: always()
+        run: |
+          [ -f history.json ] || exit 0
+          git config user.name "stimreel-bot"
+          git config user.email "stimreel-bot@users.noreply.github.com"
+          cp history.json /tmp/history.new.json
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main
+            git checkout -q -f -B main origin/main
+            python merge_history.py /tmp/history.new.json history.json
+            git add history.json
+            git diff --cached --quiet && exit 0
+            git commit -q -m "history: update"
+            git push -q origin main && exit 0
+            sleep $((i * 3))
+          done
+          exit 1

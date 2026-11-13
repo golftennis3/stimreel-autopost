@@ -87,6 +87,16 @@ def normalize_for_instagram(video):
     return out
 
 
+def write_report(cfg):
+    """Звіт статистики: у журнал і на сторінку запуску (Summary)."""
+    lines = []
+    stats.report(cfg, lambda m: (log(m), lines.append(m)))
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if path:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write("## Статистика @stim.reel\n\n```\n" + "\n".join(lines) + "\n```\n")
+
+
 def main():
     count = max(1, min(10, int(os.environ.get("COUNT") or 1)))
     publish = (os.environ.get("PUBLISH") or "true").lower() != "false"
@@ -112,6 +122,10 @@ def main():
             stats.refresh(cfg, ig_reels.graph, log, max_calls=200)
         except Exception as e:  # noqa: BLE001
             log(f"Статистику не оновлено: {e}")
+
+    if "--stats" in sys.argv:  # лише оновити й показати статистику
+        write_report(cfg)
+        return 0
 
     creds = (email, password) if email and password else None
     if not creds:
@@ -158,6 +172,10 @@ def main():
             ok += 1
         except Exception as e:  # noqa: BLE001
             log(f"ПОМИЛКА публікації {name}: {e}")
+    try:
+        write_report(cfg)
+    except Exception as e:  # noqa: BLE001
+        log(f"Звіт не вдалося скласти: {e}")
     return 0 if ok else 1
 
 

@@ -349,9 +349,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 1,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 8.3
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -367,9 +368,10 @@
     "likes": 1,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 7.2
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -385,9 +387,10 @@
     "likes": 10,
     "comments": 0,
     "shares": 14,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 7.6
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -403,9 +406,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 5.0
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -421,9 +425,10 @@
     "likes": 1,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 6.3
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -439,9 +444,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 2.4
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -457,9 +463,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 7.3
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -475,9 +482,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 7,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 6.6
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -493,9 +501,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 7.6
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -511,9 +520,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 3.3
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -529,9 +539,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 2.4
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -547,9 +558,10 @@
     "likes": 2,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 4.1
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -565,9 +577,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 1.9
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": null,
@@ -621,9 +634,10 @@
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 3.9
    },
-   "stats_at": "2026-11-12T21:41:28"
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": "marble-race",
@@ -957,7 +971,17 @@
    "images": null,
    "imported": true,
    "media_id": "18064868207561317",
-   "posted_at": "2026-11-12T14:59:47"
+   "posted_at": "2026-11-12T14:59:47",
+   "stats": {
+    "views": 1222,
+    "reach": 1086,
+    "likes": 2,
+    "comments": 0,
+    "shares": 0,
+    "saved": 0,
+    "avg_watch_s": 8.2
+   },
+   "stats_at": "2026-11-13T20:51:16"
   },
   {
    "gen": "last-square",

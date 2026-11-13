@@ -151,61 +151,69 @@ def move_with_caption(video, dest_dir):
 # ---------- публікація ----------
 
 def publish_reel(cfg, video, caption, cover_url=None, host_video=None):
-    """Опублікувати Reel. Спершу пряме завантаження файлу; якщо Instagram його не прийняв —
-    (якщо передано host_video) викласти відео за публічним посиланням і дати Instagram забрати його самому.
-    На кожному шляху: спершу з обкладинкою, потім без неї."""
-    errors = []
-
-    def attempt(url):
-        if cover_url:
-            try:
-                return _publish_reel(cfg, video, caption, cover_url, url)
-            except Exception as e:  # noqa: BLE001
-                log(f"З обкладинкою не вийшло ({str(e)[:160]}) — пробую без неї.")
-        return _publish_reel(cfg, video, caption, None, url)
-
+    """Опублікувати Reel.
+    1) пряме завантаження файлу (rupload) з обкладинкою;
+    2) якщо не вийшло і є host_video — відео за публічним посиланням прямо в контейнері (без rupload);
+    3) те саме без обкладинки."""
     try:
-        return attempt(None)
+        return _publish_reel(cfg, video, caption, cover_url)
     except Exception as e:  # noqa: BLE001
-        errors.append(e)
         if not host_video:
-            raise
-        log(f"Пряме завантаження не вдалося ({str(e)[:160]}) — пробую через публічне посилання.")
+            if not cover_url:
+                raise
+            log(f"З обкладинкою не вийшло ({str(e)[:200]}) — пробую без неї.")
+            return _publish_reel(cfg, video, caption, None)
+        log(f"Пряме завантаження не вдалося ({str(e)[:200]}) — пробую через посилання, без rupload.")
     url = host_video(video)
     log(f"Відео за посиланням: {url}")
-    return attempt(url)
+    if cover_url:
+        try:
+            return _publish_reel(cfg, video, caption, cover_url, url)
+        except Exception as e:  # noqa: BLE001
+            log(f"З обкладинкою не вийшло ({str(e)[:300]}) — пробую без неї.")
+    return _publish_reel(cfg, video, caption, None, url)
+
+
+def _status(cfg, cid):
+    try:
+        return graph(cfg, "GET", cid, fields="status_code,status")
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e)[:200]}
 
 
 def _publish_reel(cfg, video, caption, cover_url=None, video_url=None):
     ig = cfg["ig_user_id"]
     size = os.path.getsize(video)
-
-    # 1. Контейнер з resumable upload
     extra = {"cover_url": cover_url} if cover_url else {}
-    c = graph(cfg, "POST", f"{ig}/media", media_type="REELS", upload_type="resumable",
-              caption=caption, share_to_feed=str(cfg["share_to_feed"]).lower(), **extra)
-    cid = c["id"]
-    log(f"Контейнер {cid} створено, завантажую {size/1e6:.1f} МБ …")
 
-    # 2. Завантаження: або сам файл, або посилання, з якого Instagram забере файл
-    url = f"{cfg['upload_host']}/ig-api-upload/{cfg['api_version']}/{cid}"
     if video_url:
-        up = http("POST", url, data=b"", timeout=600, headers={
-            "Authorization": f"OAuth {cfg['access_token']}", "file_url": video_url})
+        # Контейнер з посиланням: Instagram сам забирає файл, rupload не використовується
+        c = graph(cfg, "POST", f"{ig}/media", media_type="REELS", video_url=video_url,
+                  caption=caption, share_to_feed=str(cfg["share_to_feed"]).lower(), **extra)
+        cid = c["id"]
+        log(f"Контейнер {cid} створено, Instagram забирає відео за посиланням …")
     else:
+        c = graph(cfg, "POST", f"{ig}/media", media_type="REELS", upload_type="resumable",
+                  caption=caption, share_to_feed=str(cfg["share_to_feed"]).lower(), **extra)
+        cid = c["id"]
+        log(f"Контейнер {cid} створено, завантажую {size/1e6:.1f} МБ …")
         with open(video, "rb") as f:
             data = f.read()
-        up = http("POST", url, data=data, timeout=600, headers={
-            "Authorization": f"OAuth {cfg['access_token']}",
-            "offset": "0",
-            "file_size": str(size),
-        })
-    if not up.get("success", True):
-        raise RuntimeError(f"Завантаження не вдалося: {up}")
+        try:
+            up = http("POST", f"{cfg['upload_host']}/ig-api-upload/{cfg['api_version']}/{cid}",
+                      data=data, timeout=600, headers={
+                          "Authorization": f"OAuth {cfg['access_token']}",
+                          "offset": "0",
+                          "file_size": str(size),
+                      })
+        except Exception as e:  # noqa: BLE001
+            raise RuntimeError(f"{e} | стан контейнера: {_status(cfg, cid)}") from None
+        if not up.get("success", True):
+            raise RuntimeError(f"Завантаження не вдалося: {up} | стан: {_status(cfg, cid)}")
 
-    # 3. Чекаємо, поки Instagram обробить відео
+    # Чекаємо, поки Instagram обробить відео
     for _ in range(60):  # до ~10 хв
-        st = graph(cfg, "GET", cid, fields="status_code,status")
+        st = _status(cfg, cid)
         code = st.get("status_code")
         if code == "FINISHED":
             break
@@ -215,7 +223,6 @@ def _publish_reel(cfg, video, caption, cover_url=None, video_url=None):
     else:
         raise RuntimeError("Обробка відео триває задовго, спробуй пізніше.")
 
-    # 4. Публікація
     pub = graph(cfg, "POST", f"{ig}/media_publish", creation_id=cid)
     return pub["id"]
 

@@ -578,14 +578,15 @@
    "media_id": "18105626873637540",
    "posted_at": "2026-11-11T08:14:33",
    "stats": {
-    "views": 237,
-    "reach": 202,
+    "views": 239,
+    "reach": 203,
     "likes": 0,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 4.3
    },
-   "stats_at": "2026-11-12T11:28:54"
+   "stats_at": "2026-11-13T12:01:32"
   },
   {
    "gen": null,
@@ -601,9 +602,10 @@
     "likes": 2,
     "comments": 0,
     "shares": 0,
-    "saved": 0
+    "saved": 0,
+    "avg_watch_s": 3.6
    },
-   "stats_at": "2026-11-12T14:49:00"
+   "stats_at": "2026-11-13T12:01:32"
   },
   {
    "gen": "peg-drop",
@@ -789,7 +791,17 @@
    ],
    "time": "2026-11-12T06:09:57",
    "media_id": "17917894770471268",
-   "posted_at": "2026-11-12T06:10:32"
+   "posted_at": "2026-11-12T06:10:32",
+   "stats": {
+    "views": 131,
+    "reach": 124,
+    "likes": 0,
+    "comments": 0,
+    "shares": 0,
+    "saved": 0,
+    "avg_watch_s": 3.0
+   },
+   "stats_at": "2026-11-13T12:01:32"
   },
   {
    "gen": "last-square",

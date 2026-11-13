@@ -1149,6 +1149,29 @@
    "time": "2026-11-13T04:13:58",
    "media_id": "18021347414957002",
    "posted_at": "2026-11-13T04:14:56"
+  },
+  {
+   "gen": "last-thread",
+   "seed": 4012335679,
+   "images": "Things",
+   "file": "20261113-120530_last-thread_4012335679.mp4",
+   "settings": [
+    "Count 7",
+    "Threads each 23",
+    "Speed 1.4",
+    "Round length (s) 60",
+    "Size 1.15",
+    "Fan width 0.65",
+    "Thread brightness 0.8",
+    "Palette Mono",
+    "Style Music box"
+   ],
+   "time": "2026-11-13T12:05:33",
+   "length": "Full round",
+   "duration": 49,
+   "drama": 10.0,
+   "media_id": "18125321905913172",
+   "posted_at": "2026-11-13T12:06:47"
   }
  ]
 }

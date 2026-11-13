@@ -81,6 +81,16 @@ def _fetch_one(cfg, graph, media_id):
                                          or "OAuth" in str(e)):
             _warned["insights"] = True
             out["_no_insights"] = True
+    # утримання: середній час перегляду (мс). Окремим запитом — щоб помилка не зачепила перегляди
+    try:
+        r = graph(cfg, "GET", f"{media_id}/insights", metric="ig_reels_avg_watch_time")
+        for item in r.get("data", []):
+            vals = item.get("values") or [{}]
+            v = vals[0].get("value", item.get("total_value", {}).get("value"))
+            if v is not None:
+                out["avg_watch_s"] = round(float(v) / 1000, 1)
+    except Exception:  # noqa: BLE001
+        pass
     if "views" not in out:
         r = graph(cfg, "GET", media_id, fields="like_count,comments_count")
         out.setdefault("likes", r.get("like_count", 0))
@@ -253,6 +263,43 @@ def weights(cfg, h, key, names, gen=None):
     return out
 
 
+def _kyiv_hour(posted):
+    """Година публікації за Києвом. Час у журналі — місцевий час машини, що публікувала
+    (у хмарі це UTC, на ноутбуці — Київ)."""
+    try:
+        from zoneinfo import ZoneInfo
+        return _parse_time(posted).astimezone().astimezone(ZoneInfo("Europe/Kyiv")).hour
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _groups(h, keyfn):
+    """Середні перегляди за довільною ознакою: {значення: (кількість, сума)}."""
+    agg = {}
+    rows = [(r, *score(r)) for r in h["recent"]]
+    kind = "views" if any(k == "views" for _, _, k in rows) else "engagement"
+    for r, sc, k in rows:
+        if sc is None or k != kind:
+            continue
+        for key in keyfn(r) or []:
+            n, tot = agg.get(key, (0, 0.0))
+            agg[key] = (n + 1, tot + sc)
+    return agg, kind
+
+
+def _print(log, title, agg, kind, order=None):
+    if not agg:
+        return
+    unit = "переглядів" if kind == "views" else "балів залученості"
+    log(f"{title} (у середньому {unit}):")
+    items = sorted(agg.items(), key=(lambda kv: order.index(kv[0])) if order else (lambda kv: -kv[1][1] / kv[1][0]))
+    for name, (n, tot) in items:
+        log(f"  {str(name):<24} {tot / n:>9.0f}   ({n} відео)")
+
+
+_CATEGORICAL = re.compile(r"^(Palette|Style|Shape|View|Theme|Mode|Палітра|Стиль|Форма|Вигляд|Тема|Режим)\s+(.+)$")
+
+
 def report(cfg, log):
     h = _load()
     for key, title in (("gen", "Ігри"), ("images", "Набори картинок")):
@@ -272,6 +319,53 @@ def report(cfg, log):
         log(f"Картинки в {gname} ({total} відео):")
         for name, (n, tot) in sorted(agg.items(), key=lambda kv: -kv[1][1] / kv[1][0]):
             log(f"  {name:<20} {tot / n:>9.0f}   ({n} відео)")
+
+    # налаштування з вибором (палітра, стиль, форма…)
+    def cats(r):
+        out = []
+        for item in r.get("settings") or []:
+            m = _CATEGORICAL.match(item)
+            if m:
+                out.append(f"{m.group(1)}: {m.group(2)}")
+        return out
+    agg, kind = _groups(h, cats)
+    by_kind = {}
+    for k, v in agg.items():
+        by_kind.setdefault(k.split(":")[0], {})[k.split(": ", 1)[1]] = v
+    for name, sub in sorted(by_kind.items()):
+        _print(log, f"Налаштування «{name}»", sub, kind)
+
+    # година публікації (Київ)
+    slots = ["ніч 0–6", "ранок 6–12", "день 12–18", "вечір 18–24"]
+    def slot(r):
+        hr = _kyiv_hour(r["posted_at"]) if r.get("posted_at") else None
+        return [slots[hr // 6]] if hr is not None else []
+    agg, kind = _groups(h, slot)
+    _print(log, "Час публікації за Києвом", agg, kind, order=[x for x in slots if x in agg])
+
+    # довжина й оцінка драми
+    def length(r):
+        d = r.get("duration")
+        if d is None:
+            return []
+        return ["до 20 с" if d < 20 else "20–40 с" if d < 40 else "40–60 с" if d < 60 else "60+ с"]
+    agg, kind = _groups(h, length)
+    _print(log, "Довжина відео", agg, kind, order=[x for x in ["до 20 с", "20–40 с", "40–60 с", "60+ с"] if x in agg])
+    def drama(r):
+        d = r.get("drama")
+        return [] if d is None else ["драма 9–10" if d >= 9 else "драма 7–9" if d >= 7 else "драма до 7"]
+    agg, kind = _groups(h, drama)
+    _print(log, "Оцінка драми сайту", agg, kind)
+
+    # утримання: скільки в середньому дивляться
+    ret = [(r["stats"]["avg_watch_s"], r.get("duration")) for r in h["recent"]
+           if (r.get("stats") or {}).get("avg_watch_s") is not None]
+    if ret:
+        avg = sum(a for a, _ in ret) / len(ret)
+        part = [a / d for a, d in ret if d]
+        extra = f", це {100 * sum(part) / len(part):.0f}% довжини ролика" if part else ""
+        log(f"Утримання: у середньому дивляться {avg:.1f} с{extra} (за {len(ret)} відео).")
+
     s = stats_cfg(cfg)
     posted = sum(1 for r in h["recent"] if r.get("media_id"))
     log(f"Reels у журналі: {posted}. Навчання: {'увімкнено' if s['learn'] else 'вимкнено'}, "

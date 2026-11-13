@@ -561,8 +561,19 @@ def _render_one(page, g, out_dir, log, gens, hist):
         with open(os.path.splitext(path)[0] + ".txt", "w", encoding="utf-8") as f:
             f.write(desc)
     log(f"Готово: {name} ({size / 1e6:.1f} МБ){' + опис' if desc else ' (опис не знайдено)'}{' + обкладинка' if thumb else ''}")
-    hist["recent"].append({"gen": gen, "seed": seed, "images": img, "file": name,
-                           "settings": changed, "time": datetime.now().isoformat(timespec="seconds")})
+    entry = {"gen": gen, "seed": seed, "images": img, "file": name,
+             "settings": changed, "time": datetime.now().isoformat(timespec="seconds")}
+    if length:
+        lab = " ".join(length.split())
+        entry["length"] = "Full round" if re.search(r"Full round|Повний", lab) else lab
+        m = re.search(r"(\d+):(\d\d)", lab)
+        if m:
+            entry["duration"] = int(m.group(1)) * 60 + int(m.group(2))
+        elif re.match(r"^\d+", lab):
+            entry["duration"] = int(re.match(r"^\d+", lab).group(0))
+    if d_score is not None:
+        entry["drama"] = d_score
+    hist["recent"].append(entry)
     _save_hist(hist)
     return path
 

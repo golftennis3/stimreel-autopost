@@ -68,6 +68,26 @@ def host_video(path):
     return url
 
 
+def cleanup_hosted_videos():
+    """Видалити викладені для Instagram відео з гілки covers (після публікації вони не потрібні)."""
+    if not (os.environ.get("GH_TOKEN") and os.environ.get("GITHUB_REPOSITORY")):
+        return
+    try:
+        files = _gh_api("GET", "contents/videos?ref=covers")
+    except Exception:  # noqa: BLE001  — папки немає: нічого прибирати
+        return
+    n = 0
+    for f in files if isinstance(files, list) else []:
+        try:
+            _gh_api("DELETE", f"contents/{f['path']}",
+                    {"message": f"remove {f['name']}", "sha": f["sha"], "branch": "covers"})
+            n += 1
+        except Exception as e:  # noqa: BLE001
+            log(f"Не вдалося видалити {f.get('name')}: {e}")
+    if n:
+        log(f"Прибрано викладених відео з репозиторію: {n}")
+
+
 def host_cover(path):
     """Покласти обкладинку в гілку covers публічного репозиторію й повернути пряме посилання на неї
     (Instagram бере обкладинку лише за публічним URL)."""
@@ -204,6 +224,8 @@ def main():
             ok += 1
         except Exception as e:  # noqa: BLE001
             log(f"ПОМИЛКА публікації {name}: {e}")
+    if publish:
+        cleanup_hosted_videos()
     try:
         write_report(cfg)
     except Exception as e:  # noqa: BLE001

@@ -152,26 +152,28 @@ def move_with_caption(video, dest_dir):
 
 def publish_reel(cfg, video, caption, cover_url=None, host_video=None):
     """Опублікувати Reel.
-    1) пряме завантаження файлу (rupload) з обкладинкою;
-    2) якщо не вийшло і є host_video — відео за публічним посиланням прямо в контейнері (без rupload);
-    3) те саме без обкладинки."""
-    try:
-        return _publish_reel(cfg, video, caption, cover_url)
-    except Exception as e:  # noqa: BLE001
-        if not host_video:
-            if not cover_url:
-                raise
-            log(f"З обкладинкою не вийшло ({str(e)[:200]}) — пробую без неї.")
-            return _publish_reel(cfg, video, caption, None)
-        log(f"Пряме завантаження не вдалося ({str(e)[:200]}) — пробую через посилання, без rupload.")
-    url = host_video(video)
-    log(f"Відео за посиланням: {url}")
-    if cover_url:
+    Якщо є host_video: спершу відео за публічним посиланням (Instagram сам забирає файл),
+    а пряме завантаження (rupload) — запасний варіант. Інакше — лише пряме завантаження.
+    Якщо обкладинку не прийнято — повтор без неї."""
+    def attempt(url):
+        if cover_url:
+            try:
+                return _publish_reel(cfg, video, caption, cover_url, url)
+            except Exception as e:  # noqa: BLE001
+                log(f"З обкладинкою не вийшло ({str(e)[:300]}) — пробую без неї.")
+        return _publish_reel(cfg, video, caption, None, url)
+
+    if host_video:
         try:
-            return _publish_reel(cfg, video, caption, cover_url, url)
+            url = host_video(video)
+            log(f"Відео за посиланням: {url}")
+            try:
+                return _publish_reel(cfg, video, caption, cover_url, url)
+            except Exception as e:  # noqa: BLE001
+                log(f"За посиланням не вийшло ({str(e)[:300]}) — пробую пряме завантаження.")
         except Exception as e:  # noqa: BLE001
-            log(f"З обкладинкою не вийшло ({str(e)[:300]}) — пробую без неї.")
-    return _publish_reel(cfg, video, caption, None, url)
+            log(f"Не вдалося викласти відео ({e}) — пробую пряме завантаження.")
+    return attempt(None)
 
 
 def _status(cfg, cid):

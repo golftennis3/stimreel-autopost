@@ -1054,6 +1054,25 @@
     "Style Marimba"
    ],
    "time": "2026-11-13T03:26:43"
+  },
+  {
+   "gen": "stair-bounce",
+   "seed": 2203342851,
+   "images": "Verity",
+   "file": "20261113-034152_stair-bounce_2203342851.mp4",
+   "settings": [
+    "Speed 2",
+    "Bounciness 0.5",
+    "Steps 34",
+    "Size 1.2",
+    "Spin speed 1.05",
+    "Variety 0.45",
+    "Gravity 1.7",
+    "Zoom 2.1",
+    "Colours One colour",
+    "Palette Ocean"
+   ],
+   "time": "2026-11-13T03:41:55"
   }
  ]
 }

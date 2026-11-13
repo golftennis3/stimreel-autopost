@@ -1114,6 +1114,29 @@
    "time": "2026-11-13T04:04:09",
    "media_id": "18119933921015842",
    "posted_at": "2026-11-13T04:07:23"
+  },
+  {
+   "gen": "marble-bounce",
+   "seed": 1653491051,
+   "images": "Default",
+   "file": "20261113-041357_marble-bounce_1653491051.mp4",
+   "settings": [
+    "Count 4",
+    "Count 30",
+    "Size 0.9",
+    "Thickness 80",
+    "Rotation speed 0.85",
+    "Opening size (°) 63",
+    "Spiral twist (°) 12",
+    "Gravity 1.75",
+    "Colours Fade to one colour",
+    "Palette Sunset",
+    "Style Music box",
+    "Openings Scattered"
+   ],
+   "time": "2026-11-13T04:13:58",
+   "media_id": "18021347414957002",
+   "posted_at": "2026-11-13T04:14:56"
   }
  ]
 }

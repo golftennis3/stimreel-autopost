@@ -18,6 +18,7 @@ on:
     - cron: "3 11,12 * * *"
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: autopost
   cancel-in-progress: false
@@ -41,6 +42,11 @@ jobs:
           echo "run=true" >> "$GITHUB_OUTPUT"
           sleep $(( wait * 60 ))
           git pull -q --ff-only || true   # свіжа історія після очікування
+      - name: Keep schedule alive
+        # GitHub вимикає розклад у публічному репозиторії після 60 днів без активності; це скидає лічильник
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/autopost.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-python@v5
         if: steps.gate.outputs.run == 'true'
         with: { python-version: "3.12" }

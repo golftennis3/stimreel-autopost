@@ -1,0 +1,26 @@
+name: Autopost on/off
+on:
+  workflow_dispatch:
+    inputs:
+      state:
+        description: "Щоденний автопостинг (14:00–16:00 за Києвом)"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
+permissions:
+  contents: write
+jobs:
+  toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Switch
+        run: |
+          echo "${{ inputs.state }}" > autopost.txt
+          git config user.name "stimreel-bot"
+          git config user.email "stimreel-bot@users.noreply.github.com"
+          git add autopost.txt
+          git diff --cached --quiet || git commit -q -m "autopost: ${{ inputs.state }}"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 3; done
+          if [ "${{ inputs.state }}" = "on" ]; then echo "## Автопостинг УВІМКНЕНО (щодня 14:00–16:00 за Києвом)" >> "$GITHUB_STEP_SUMMARY";
+          else echo "## Автопостинг ВИМКНЕНО" >> "$GITHUB_STEP_SUMMARY"; fi

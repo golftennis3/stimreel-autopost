@@ -10,9 +10,12 @@ on:
         description: "Публікувати в Instagram (вимкни — лише згенерувати для перевірки)"
         type: boolean
         default: true
-  # Автоматичний розклад (UTC). Щоб увімкнути — прибери # у двох рядках нижче.
-  # schedule:
-  #   - cron: "37 9,16 * * *"
+  # Розклад: щодня у випадковий момент між 14:00 і 16:00 за Києвом.
+  # GitHub рахує час в UTC, тому запуск о 11:03 і 12:03 UTC, а крок «Pick time» лишає той,
+  # що припадає на 14:03 за Києвом (так працює і взимку, і влітку).
+  # Увімкнути/вимкнути: Actions → «Autopost on/off» → Run workflow (файл autopost.txt: on / off).
+  schedule:
+    - cron: "3 11,12 * * *"
 permissions:
   contents: write
 concurrency:
@@ -21,14 +24,32 @@ concurrency:
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
+      - name: Pick time
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$(tr -d ' \n\r' < autopost.txt 2>/dev/null)" != "on" ]; then
+            echo "Автопостинг вимкнено (autopost.txt)."; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          h=$(TZ=Europe/Kyiv date +%-H); m=$(TZ=Europe/Kyiv date +%-M)
+          if [ "$h" != "14" ]; then echo "Зараз $h:$m за Києвом — не цей запуск."; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          target=$(( RANDOM % 96 ))          # хвилина після 14:00, до 15:35 (+~10 хв на генерацію)
+          wait=$(( target - m )); [ $wait -lt 0 ] && wait=0
+          echo "Публікація близько $(TZ=Europe/Kyiv date -d "+$wait min" +%H:%M) за Києвом, чекаю $wait хв."
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          sleep $(( wait * 60 ))
+          git pull -q --ff-only || true   # свіжа історія після очікування
       - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
         with: { python-version: "3.12" }
       - run: pip install playwright
-      - run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+        if: steps.gate.outputs.run == 'true'
+      - if: steps.gate.outputs.run == 'true'
+        run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
       - name: Generate and post
+        if: steps.gate.outputs.run == 'true'
         run: xvfb-run -a python cloud_run.py
         env:
           COUNT: ${{ inputs.count || '1' }}
@@ -39,11 +60,11 @@ jobs:
           STIMREEL_PASSWORD: ${{ secrets.STIMREEL_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Keep videos for 3 days
-        if: always()
+        if: always() && steps.gate.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with: { name: videos, path: "out/", if-no-files-found: ignore, retention-days: 3 }
       - name: Save history
-        if: always()
+        if: always() && steps.gate.outputs.run == 'true'
         run: |
           [ -f history.json ] || exit 0
           git config user.name "stimreel-bot"
